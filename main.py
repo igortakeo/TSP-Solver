@@ -3,7 +3,7 @@ import math
 from solver_galaxy import solve, INF
 import sys
 
-sys.stdin = open('teste.txt', 'r')
+#sys.stdin = open('teste.txt', 'r')
 
 precision = 3
 
