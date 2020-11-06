@@ -39,9 +39,9 @@ def solve(matrix):
     #Define as restricoes 1 e 2
     for i in range(n): 
         #Restricao 1: sum em j de {x_ij} = 1 para todo i
-        model.Add(sum(x[i][j] for j in range(n)) == 1)
+        model.Add(sum([x[i][j] for j in range(n) if j != i]) == 1)
         #Restricao 2: sum em i de {x_ij} = 1 para todo j
-        model.Add(sum(x[j][i] for j in range(n)) == 1)
+        model.Add(sum([x[j][i] for j in range(n) if j != i]) == 1)
 
     #Define a Restricao 3 para verificar um subciclo ja encontrado
     for i in range(1, n):

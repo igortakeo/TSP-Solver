@@ -33,10 +33,7 @@ matrix_int = np.zeros((ngalaxys,ngalaxys), dtype=np.int64)
 
 for i in range(ngalaxys):
     for j in range(ngalaxys):
-        if i != j:
-            matrix_int[i,j] = int(matrix[i,j] * (10 ** precision))       
-        else:
-            matrix_int[i,j] = INF
+        matrix_int[i,j] = int(matrix[i,j] * (10 ** precision))       
 
 path, distance = solve(matrix_int)
 print(path)
