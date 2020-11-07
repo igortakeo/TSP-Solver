@@ -2,10 +2,62 @@ import numpy as np
 import math
 from solver_galaxy import solve, INF
 import sys
+import matplotlib.pyplot as plt
 
-#sys.stdin = open('teste.txt', 'r')
+#Funcao responsavel por plotar os pontos do problema e o caminho entre eles encontrado pelo solver
+def printPath(coords, path, name):
+  coords_unzip = list(zip(*coords)) 
 
-precision = 3
+  xp = []
+  yp = []
+  for p in path:
+    xp.append(coords_unzip[0][p-1])
+    yp.append(coords_unzip[1][p-1])  
+
+  plt.figure(figsize=(20,20),facecolor='white')
+  plt.plot(xp, yp,label = 'Solution path',linewidth = 2) #Plota o caminho encontrado
+  plt.scatter(coords_unzip[0], coords_unzip[1],label = 'Problem points',linewidth = 2, c = 'red') #Plota os pontos do sistema
+  plt.scatter(coords_unzip[0][0], coords_unzip[1][0],label = 'Initial point',linewidth = 2, c = 'orange') #Plota o ponto inicial
+  plt.xlabel('x',fontsize='large') 
+  plt.ylabel('y',fontsize='large') 
+  plt.title('Solution for ' + name) 
+  plt.legend() 
+  plt.show()
+
+
+#Funcao responsavel por obter os dados dado um arquivo .tsp de entrada, conforme os arquivos da especificacao
+def input_parser(input_name):
+    coords = []
+
+    try:
+        f = open(input_name, 'r')
+    except OSError:
+        print('Could not read file ' + input_name)      #Caso haja algum problema na abertura (Como arquivo inexistente)
+        sys.exit()
+
+    name = ''
+    IsPointInput = False
+
+    for line in f:                  
+        line_info = line.split()
+
+        if not IsPointInput:
+            if line_info[0] == 'NAME:':
+                name = line_info[1]     
+            
+            if line_info[0] == 'NODE_COORD_SECTION':    #Indica que abaixo virao os dados de cada ponto do problema
+                IsPointInput = True
+        else:
+            coords.append((float(line_info[1]), float(line_info[2])))
+
+    f.close()
+
+    return name, coords
+
+
+
+
+precision = 3   #valor da precisao maxima utilizada no float do problema
 
 #Funcao responsavel pelo calculo preenchimento da matrix de adjacencia das galaxias com a distancia entre cada uma
 def gen_matrix_dist(coords):
@@ -19,22 +71,21 @@ def gen_matrix_dist(coords):
     return matrix
 
 
-ngalaxys = int(input())         #Input do numero de galaxias do problema em questao
-
-coords = []
-
-for i in range(ngalaxys):       #Input das coordenadas de cada galaxia
-    x = float(input())
-    y = float(input())
-    coords.append((x,y))
+#input do programa
+test_file_name = input('Insert test file name: ')
+name, coords = input_parser(test_file_name)
+ngalaxys = len(coords)
 
 matrix = gen_matrix_dist(coords)
 matrix_int = np.zeros((ngalaxys,ngalaxys), dtype=np.int64)
 
+#transforma a matriz de float em matriz de inteiros com a precisao maxima requirida
 for i in range(ngalaxys):
     for j in range(ngalaxys):
-        matrix_int[i,j] = int(matrix[i,j] * (10 ** precision))       
+        matrix_int[i,j] = int(matrix[i,j] * (10 ** precision))   
 
-path, distance = solve(matrix_int)
-print(path)
-print(float(distance)/(10 ** precision))
+path, distance = solve(matrix_int)       #soluciona o problema dada a matriz de distancias do problema
+print('Solution path (Points visited):')
+print(path)                              #caminho percorrido (pontos visitados)
+print('Distance travelled: %f' %(float(distance)/(10 ** precision))) #distancia total percorrida
+printPath(coords, path, name)           #plota o caminho percorrido

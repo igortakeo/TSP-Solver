@@ -3,6 +3,8 @@ import numpy as np
 
 INF = 0x3f3f3f3f
 
+#dados os valores que o solver encontrou para as variaveis binarias x_ij
+#encontra o caminho percorrido (pontos visitados)
 def path_tracer(ans_matrix):
     index = 0
     path = [1]
@@ -10,11 +12,12 @@ def path_tracer(ans_matrix):
     n = np.shape(ans_matrix)[0]
     while True:
         for j in range(n):
-            if ans_matrix[index,j] == 1:
+            if ans_matrix[index,j] == 1:    #encontra o proximo ponto visitado a partir do atual
                 index = j
                 break
         
-        if index == 0:
+        if index == 0:          #se voltou a origem, entao fim de caminho
+            path.append(1)
             break
 
         path.append(index+1)
@@ -38,7 +41,7 @@ def solve(matrix):
     
     #Define as restricoes 1 e 2
     for i in range(n): 
-        #Restricao 1: sum em j de {x_ij} = 1 para todo i
+        #Restricao 1: sum em j de {x_ij} = 1 para todo i 
         model.Add(sum([x[i][j] for j in range(n) if j != i]) == 1)
         #Restricao 2: sum em i de {x_ij} = 1 para todo j
         model.Add(sum([x[j][i] for j in range(n) if j != i]) == 1)
@@ -54,12 +57,13 @@ def solve(matrix):
     model.Minimize(func_obj) #indica que desejamos MINIMIZAR a funcao objetivo
 
     solver = cp_model.CpSolver()
-    solver.parameters.max_time_in_seconds = 10.0 * 60.0
-    solver.Solve(model)
+    solver.parameters.max_time_in_seconds = 10.0 * 60.0 #Limite de tempo de 10 minutos
+    solver.Solve(model)     #Chamada do solver para o modelo desenvolvido
 
+    #Obtem os valores das variaveis binarias x_ij que o solver encontrou
     ans_matrix = np.zeros((n,n), dtype=np.int64)
     for i in range(n):
         for j in range(n):
-            ans_matrix[i,j] = solver.Value(x[i][j])
+            ans_matrix[i,j] = solver.Value(x[i][j]) 
 
     return path_tracer(ans_matrix), solver.Value(func_obj)
