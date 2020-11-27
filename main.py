@@ -56,9 +56,6 @@ def input_parser(input_name):
 
 
 
-
-precision = 3   #valor da precisao maxima utilizada no float do problema
-
 #Funcao responsavel pelo calculo preenchimento da matrix de adjacencia das galaxias com a distancia entre cada uma
 def gen_matrix_dist(coords):
     n = len(coords)
@@ -77,15 +74,9 @@ name, coords = input_parser(test_file_name)
 ngalaxys = len(coords)
 
 matrix = gen_matrix_dist(coords)
-matrix_int = np.zeros((ngalaxys,ngalaxys), dtype=np.int64)
 
-#transforma a matriz de float em matriz de inteiros com a precisao maxima requirida
-for i in range(ngalaxys):
-    for j in range(ngalaxys):
-        matrix_int[i,j] = int(matrix[i,j] * (10 ** precision))   
-
-path, distance = solve(matrix_int)       #soluciona o problema dada a matriz de distancias do problema
+path, distance = solve(matrix)       #soluciona o problema dada a matriz de distancias do problema
 print('Solution path (Points visited):')
 print(path)                              #caminho percorrido (pontos visitados)
-print('Distance travelled: %f' %(float(distance)/(10 ** precision))) #distancia total percorrida
+print('Distance travelled: %f' %(distance)) #distancia total percorrida
 printPath(coords, path, name)           #plota o caminho percorrido
