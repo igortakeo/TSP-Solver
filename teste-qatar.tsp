@@ -1,4 +1,4 @@
-NAME : qa194
+NAME: qatar
 COMMENT : 194 locations in Qatar
 COMMENT : Derived from National Imagery and Mapping Agency data
 TYPE : TSP
@@ -199,4 +199,3 @@ NODE_COORD_SECTION
 192 26133.3333 51216.6667
 193 26133.3333 51300.0000
 194 26150.2778 51108.0556
-EOF

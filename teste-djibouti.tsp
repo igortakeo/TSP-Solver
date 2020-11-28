@@ -1,4 +1,4 @@
-NAME: dj38
+NAME: djibouti
 COMMENT : 38 locations in Djibouti
 COMMENT : Derived from National Imagery and Mapping Agency data
 COMMENT : This file is a corrected version of dj89, where duplications

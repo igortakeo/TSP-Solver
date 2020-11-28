@@ -1,4 +1,4 @@
-NAME : uy734
+NAME: uruguay
 COMMENT : 734 locations in Uruguay
 COMMENT : Derived from National Imagery and Mapping Agency data
 TYPE : TSP
@@ -739,4 +739,3 @@ NODE_COORD_SECTION
 732 34909.7222 56152.2222
 733 34922.7778 56159.7222
 734 34966.6667 54950.0000
-EOF

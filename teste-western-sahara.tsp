@@ -1,4 +1,4 @@
-NAME : wi29
+NAME : western-sahara
 COMMENT : 29 locations in Western Sahara
 COMMENT : Derived from National Imagery and Mapping Agency data
 TYPE : TSP
@@ -34,4 +34,3 @@ NODE_COORD_SECTION
 27 27266.6667 10383.3333
 28 27433.3333 12400.0000
 29 27462.5000 12992.2222
-EOF
