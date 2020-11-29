@@ -75,7 +75,13 @@ ngalaxys = len(coords)
 
 matrix = gen_matrix_dist(coords)
 
-path, distance = solve(matrix)       #soluciona o problema dada a matriz de distancias do problema
+try:
+    flag = int(input("Selecione uma opção:\n1-Sem heuristica\n2-Guloso\nOpção:"))
+except:
+    print("Erro! Entrada invalida!")
+    exit()
+
+path, distance = solve(matrix, flag)       #soluciona o problema dada a matriz de distancias do problema
 print('Solution path (Points visited):')
 print(path)                              #caminho percorrido (pontos visitados)
 print('Distance travelled: %f' %(distance)) #distancia total percorrida

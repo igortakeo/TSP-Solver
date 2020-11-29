@@ -3,6 +3,40 @@ import numpy as np
 
 INF = 0x3f3f3f3f
 
+def greedy(matrix_ori):
+
+    matrix = np.copy(matrix_ori)
+
+    n = np.shape(matrix)[0]
+    matrix_aux = np.zeros((n+1,n),dtype=np.int64)
+    galaxy_visited = 0
+    local = 0
+    ind_y = n+1
+
+    for i in range(n):
+        matrix[i,i] = INF
+
+    while galaxy_visited < n:
+
+        matrix_aux[n,local] = ind_y
+        ind_y = ind_y - 1
+
+        galaxy_visited = galaxy_visited + 1
+        ind = np.argmin(matrix[local,:])    
+        
+        for i in range(n):
+            matrix[i,local] = INF
+        
+        matrix_aux[local,ind] = 1
+        local = ind
+
+    vector = []
+    for i in range(n+1):
+        for j in range(n):
+            vector.append(int(matrix_aux[i,j]))
+
+    return vector
+
 #dados os valores que o solver encontrou para as variaveis binarias x_ij
 #encontra o caminho percorrido (pontos visitados)
 def path_tracer(ans_matrix):
@@ -25,7 +59,7 @@ def path_tracer(ans_matrix):
 
     return path
 
-def solve(matrix):
+def solve(matrix, flag):
     solver = pywraplp.Solver.CreateSolver('SCIP') #Define o modelo
 
     n = np.shape(matrix)[0]
@@ -52,6 +86,10 @@ def solve(matrix):
             if j != i:
                 solver.Add((y[i] - n * x[i][j]) >= y[j] - (n - 1))
 
+    if(flag == 2):
+        vector = greedy(matrix)
+        solver.SetHint(solver.variables(), vector)
+
     #Define a funcao objetivo - indica que desejamos MINIMIZAR a funcao objetivo
     #Também define a funcao objetivo
     solver.Minimize(sum((matrix[i,j] * x[i][j]) for i in range(n) for j in range(n)))
@@ -64,5 +102,7 @@ def solve(matrix):
     for i in range(n):
         for j in range(n):
             ans_matrix[i,j] = x[i][j].solution_value() 
+
+    print("Nós:" + str(solver.nodes()))
 
     return path_tracer(ans_matrix), solver.Objective().Value()
