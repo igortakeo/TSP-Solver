@@ -8,6 +8,7 @@ def greedy(matrix_ori):
     matrix = np.copy(matrix_ori)
 
     n = np.shape(matrix)[0]
+    m = np.zeros((n,n),dtype=np.int64)
     matrix_aux = np.zeros((n+1,n),dtype=np.int64)
     galaxy_visited = 0
     local = 0
@@ -30,12 +31,47 @@ def greedy(matrix_ori):
         matrix_aux[local,ind] = 1
         local = ind
 
+    result = 0
+    for i in range (n):
+        for j in range(n):
+            if matrix_aux[i,j] == 1:
+                result += matrix_ori[i,j]
+
+
     vector = []
     for i in range(n+1):
         for j in range(n):
             vector.append(int(matrix_aux[i,j]))
 
-    return vector
+ 
+    for i in range(n):
+        for j in range(n):
+            m[i,j] = matrix_aux[i,j]
+
+    return vector, result, m
+
+
+def cost(route,matrix):
+    sum = 0
+    for i in range(1, len(route)):
+        sum += matrix[route[i]-1,route[i-1]-1]
+    return sum
+
+def two_opt(route, matrix):
+     best = route
+     improved = True
+     while improved:
+          improved = False
+          for i in range(1, len(route)-2):
+               for j in range(i+1, len(route)):
+                    if j-i == 1: continue # changes nothing, skip then
+                    new_route = route[:]
+                    new_route[i:j] = route[j-1:i-1:-1] # this is the 2woptSwap
+                    if cost(new_route,matrix) < cost(best,matrix):
+                         best = new_route
+                         improved = True
+          route = best
+     return best
 
 #dados os valores que o solver encontrou para as variaveis binarias x_ij
 #encontra o caminho percorrido (pontos visitados)
@@ -58,6 +94,7 @@ def path_tracer(ans_matrix):
 
 
     return path
+
 
 def solve(matrix, flag):
     solver = pywraplp.Solver.CreateSolver('SCIP') #Define o modelo
@@ -87,7 +124,14 @@ def solve(matrix, flag):
                 solver.Add((y[i] - n * x[i][j]) >= y[j] - (n - 1))
 
     if(flag == 2):
-        vector = greedy(matrix)
+        vector, result, m = greedy(matrix)
+        print(result)
+        path = path_tracer(m)
+        print(path)
+        path = two_opt(path, matrix)
+        result = cost(path, matrix)
+        print(result)
+        print(path)
         solver.SetHint(solver.variables(), vector)
 
     #Define a funcao objetivo - indica que desejamos MINIMIZAR a funcao objetivo
