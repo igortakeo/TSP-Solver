@@ -6,50 +6,44 @@ INF = 0x3f3f3f3f
 
 def greedy(matrix_ori):
 
+    # copia a matriz original do problema
     matrix = np.copy(matrix_ori)
 
+    # inicia as variaveis
     n = np.shape(matrix)[0]
     m = np.zeros((n,n),dtype=np.int64)
-    matrix_aux = np.zeros((n+1,n),dtype=np.int64)
+    matrix_aux = np.zeros((n,n),dtype=np.int64)
     galaxy_visited = 0
     local = 0
-    ind_y = n+1
 
+    # marca para n poder ir de um no para ele mesmo
     for i in range(n):
         matrix[i,i] = INF
 
+    # conecta as galaxias
     while galaxy_visited < n:
-
-        matrix_aux[n,local] = ind_y
-        ind_y = ind_y - 1
 
         galaxy_visited = galaxy_visited + 1
         ind = np.argmin(matrix[local,:])    
-        
+
+        # marca que nao pode voltar para nenhuma tentar voltar para ela (ja visitada)
         for i in range(n):
             matrix[i,local] = INF
         
+        # marca por qual galaxia foi visitada
         matrix_aux[local,ind] = 1
         local = ind
 
-    result = 0
-    for i in range (n):
-        for j in range(n):
-            if matrix_aux[i,j] == 1:
-                result += matrix_ori[i,j]
-
-
+    # gera o vetor a ser usado no solver como resposta inicial
     vector = []
-    for i in range(n+1):
+    for i in range(n):
         for j in range(n):
             vector.append(int(matrix_aux[i,j]))
 
- 
-    for i in range(n):
-        for j in range(n):
-            m[i,j] = matrix_aux[i,j]
+    # copia a matrix aux
+    m = np.copy(matrix_aux)
 
-    return vector, result, m
+    return vector, m
 
 
 def cost(route,matrix):
@@ -105,11 +99,11 @@ def solve(matrix, flag):
     n = np.shape(matrix)[0]
     
     #Cria as variaveis
-    x = [[model.addVar(0, 1, vtype=GRB.INTEGER, name='x[%d,%d]' % (i,j)) for j in range(n)] for i in range(n)] #Define as variaveis binarias inteiras x_ij que assume valores 0 ou 1
+    x = [[model.addVar(0, 1, 0, vtype=GRB.INTEGER, name='x[%d,%d]' % (i,j)) for j in range(n)] for i in range(n)] #Define as variaveis binarias inteiras x_ij que assume valores 0 ou 1
     # x_ij assume 1 caso o caminho da galaxia i a galaxia j seja escolhido
     # x_ij assume 0 caso contrario
 
-    y = [model.addVar(0, GRB.INFINITY, vtype=GRB.INTEGER, name='y[%d]' % (i)) for i in range(n)] #define a variavel auxiliar y
+    y = [model.addVar(0, GRB.INFINITY, 0, vtype=GRB.INTEGER, name='y[%d]' % (i)) for i in range(n)] #define a variavel auxiliar y
     
     #Define as restricoes 1 e 2
     for i in range(n): 
@@ -124,9 +118,22 @@ def solve(matrix, flag):
             if j != i:
                 model.addConstr((y[i] - n * x[i][j]) >= y[j] - (n - 1))
 
-    #if(flag == 2):
-    #    vector, result, m = greedy(matrix)
-    #    solver.SetHint(solver.variables(), vector)
+    #Define a funcao objetivo - indica que desejamos MINIMIZAR a funcao objetivo
+    model.setObjective(sum((matrix[i,j] * x[i][j]) for i in range(n) for j in range(n)), GRB.MINIMIZE)
+
+    model.update()
+
+    # heuristica gulosa
+    if(flag == 2):
+        vector, m = greedy(matrix)
+        vars = model.getVars()
+        #coloca os x
+        for i in range(n):
+            for j in range(n):
+                vars[(i*n)+j].start = vector[(i*n)+j]
+        #coloca os y
+        for j in range(n):
+            vars[(n*n)+j].start = GRB.UNDEFINED
 
     #TODO
     #if(flag == 3):
@@ -136,8 +143,6 @@ def solve(matrix, flag):
     #    result = cost(path, matrix) usado para comprar a distancia antes e depois do two_opt
     #    solver.SetHint(solver.variables(), vector)
 
-    #Define a funcao objetivo - indica que desejamos MINIMIZAR a funcao objetivo
-    model.setObjective(sum((matrix[i,j] * x[i][j]) for i in range(n) for j in range(n)), GRB.MINIMIZE)
 
     model.optimize()     #Chamada do solver para o modelo desenvolvido
 
