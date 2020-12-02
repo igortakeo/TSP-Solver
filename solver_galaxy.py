@@ -97,7 +97,7 @@ def path_tracer(ans_matrix):
 
 
 def solve(matrix, flag):
-    solver = pywraplp.Solver.CreateSolver('SCIP') #Define o modelo
+    solver = pywraplp.Solver.CreateSolver('SCIP') #Define o solver
 
     n = np.shape(matrix)[0]
     
@@ -125,13 +125,14 @@ def solve(matrix, flag):
 
     if(flag == 2):
         vector, result, m = greedy(matrix)
-        print(result)
+        solver.SetHint(solver.variables(), vector)
+
+    #TODO
+    if(flag == 3):
+        vector, result, m = greedy(matrix)
         path = path_tracer(m)
-        print(path)
         path = two_opt(path, matrix)
-        result = cost(path, matrix)
-        print(result)
-        print(path)
+        # result = cost(path, matrix) usado para comprar a distancia antes e depois do two_opt
         solver.SetHint(solver.variables(), vector)
 
     #Define a funcao objetivo - indica que desejamos MINIMIZAR a funcao objetivo
@@ -147,6 +148,6 @@ def solve(matrix, flag):
         for j in range(n):
             ans_matrix[i,j] = x[i][j].solution_value() 
 
-    print("Nós:" + str(solver.nodes()))
+    obj = solver.Objective() # cria a classe objetivo para pegar o bestBound
 
-    return path_tracer(ans_matrix), solver.Objective().Value()
+    return path_tracer(ans_matrix), solver.Objective().Value(), solver.nodes(), obj.BestBound(), solver.Iterations()
