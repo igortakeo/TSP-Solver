@@ -83,7 +83,15 @@ except:
 if flag == 0:
     exit()
 
-path = solve(matrix, flag)       #soluciona o problema dada a matriz de distancias do problema
+try:
+    flag2 = int(input("Select an option:\n1-Focus on decrease the primal\n2-Focus on decrease the dual\n3-Without focus\n0-Exit\nOpção:"))
+except:
+    print("Error! Invalid Input!")
+    exit()
+if flag == 0:
+    exit()
+
+path = solve(matrix, flag, flag2)       #soluciona o problema dada a matriz de distancias do problema
 print('Solution path (Points visited):')
 print(path)                              #caminho percorrido (pontos visitados)
 printPath(coords, path, name)           #plota o caminho percorrido

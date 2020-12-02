@@ -1,20 +1,20 @@
-import gurobipy as gp
+from gurobipy import gurobipy as gp
 from gurobipy import GRB
 import numpy as np
 
 INF = 0x3f3f3f3f
 
 def greedy(matrix_ori):
-
     # copia a matriz original do problema
     matrix = np.copy(matrix_ori)
-
+   
     # inicia as variaveis
     n = np.shape(matrix)[0]
     m = np.zeros((n,n),dtype=np.int64)
-    matrix_aux = np.zeros((n,n),dtype=np.int64)
+    matrix_aux = np.zeros((n+1,n),dtype=np.int64)
     galaxy_visited = 0
     local = 0
+    ind_y = n+1
 
     # marca para n poder ir de um no para ele mesmo
     for i in range(n):
@@ -23,6 +23,11 @@ def greedy(matrix_ori):
     # conecta as galaxias
     while galaxy_visited < n:
 
+        # calcula o y
+        matrix_aux[n,local] = ind_y
+        ind_y = ind_y - 1
+
+        # acha a mais próxima
         galaxy_visited = galaxy_visited + 1
         ind = np.argmin(matrix[local,:])    
 
@@ -36,15 +41,16 @@ def greedy(matrix_ori):
 
     # gera o vetor a ser usado no solver como resposta inicial
     vector = []
-    for i in range(n):
+    for i in range(n+1):
         for j in range(n):
             vector.append(int(matrix_aux[i,j]))
 
-    # copia a matrix aux
-    m = np.copy(matrix_aux)
+     # copia a matrix aux
+    for i in range(n):
+        for j in range(n):
+            m[i,j] = matrix_aux[i,j]
 
     return vector, m
-
 
 def cost(route,matrix):
     sum = 0
@@ -91,10 +97,16 @@ def path_tracer(ans_matrix):
     return path
 
 
-def solve(matrix, flag):
+def solve(matrix, flag, flag2):
 
-    model = gp.Model("MPI_GALAXY") #Define o solver
-    model.setParam('TimeLimit', 60*10) #limita o tempo em 10 minutos
+    model = gp.Model("MPI_GALAXY") # Define o solver
+    model.setParam('TimeLimit', 60*10) # limita o tempo em 10 minutos
+
+    if(flag2 == 1):
+        model.setParam('MIPFocus', 1) # Seta o estregia para explorar os nós da arvore
+    
+    if(flag2 == 2):
+        model.setParam('MIPFocus', 3) # Seta o estregia para explorar os nós da arvore
 
     n = np.shape(matrix)[0]
     
@@ -127,13 +139,13 @@ def solve(matrix, flag):
     if(flag == 2):
         vector, m = greedy(matrix)
         vars = model.getVars()
-        #coloca os x
-        for i in range(n):
+        #coloca os x e os y
+        for i in range(n+1):
             for j in range(n):
                 vars[(i*n)+j].start = vector[(i*n)+j]
         #coloca os y
-        for j in range(n):
-            vars[(n*n)+j].start = GRB.UNDEFINED
+        #for j in range(n):
+        #    vars[(n*n)+j].start = GRB.UNDEFINED
 
     #TODO
     #if(flag == 3):
