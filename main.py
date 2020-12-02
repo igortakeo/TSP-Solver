@@ -84,11 +84,7 @@ except:
 if flag == 0:
     exit()
 
-path, distance, num_nodes, best_bound, iterations = solve(matrix, flag)       #soluciona o problema dada a matriz de distancias do problema
+path = solve(matrix, flag)       #soluciona o problema dada a matriz de distancias do problema
 print('Solution path (Points visited):')
 print(path)                              #caminho percorrido (pontos visitados)
-print('Distance travelled: %f' %(distance)) #distancia total percorrida
 printPath(coords, path, name)           #plota o caminho percorrido
-print('GAP: %f' %(distance - best_bound))
-print('Number of nodes: %d' %(num_nodes))
-print('Number of simplex iterations: %d' %(iterations))

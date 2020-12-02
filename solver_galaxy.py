@@ -1,4 +1,5 @@
-from ortools.linear_solver import pywraplp
+import gurobipy as gp
+from gurobipy import GRB
 import numpy as np
 
 INF = 0x3f3f3f3f
@@ -97,57 +98,55 @@ def path_tracer(ans_matrix):
 
 
 def solve(matrix, flag):
-    solver = pywraplp.Solver.CreateSolver('SCIP') #Define o solver
+
+    model = gp.Model("MPI_GALAXY") #Define o solver
+    model.setParam('TimeLimit', 60*10) #limita o tempo em 10 minutos
 
     n = np.shape(matrix)[0]
     
     #Cria as variaveis
-    x = [[solver.IntVar(0, 1, 'x[%d,%d]' % (i,j)) for j in range(n)] for i in range(n)] #Define as variaveis binarias inteiras x_ij que assume valores 0 ou 1
+    x = [[model.addVar(0, 1, vtype=GRB.INTEGER, name='x[%d,%d]' % (i,j)) for j in range(n)] for i in range(n)] #Define as variaveis binarias inteiras x_ij que assume valores 0 ou 1
     # x_ij assume 1 caso o caminho da galaxia i a galaxia j seja escolhido
     # x_ij assume 0 caso contrario
 
-    infinity = solver.infinity()
-
-    y = [solver.IntVar(0, infinity, 'y[%d]' % (i)) for i in range(n)] #define a variavel auxiliar y
+    y = [model.addVar(0, GRB.INFINITY, vtype=GRB.INTEGER, name='y[%d]' % (i)) for i in range(n)] #define a variavel auxiliar y
     
     #Define as restricoes 1 e 2
     for i in range(n): 
         #Restricao 1: sum em j de {x_ij} = 1 para todo i 
-        solver.Add(sum([x[i][j] for j in range(n) if j != i]) == 1)
+        model.addConstr(sum([x[i][j] for j in range(n) if j != i]) == 1)
         #Restricao 2: sum em i de {x_ij} = 1 para todo j
-        solver.Add(sum([x[j][i] for j in range(n) if j != i]) == 1)
+        model.addConstr(sum([x[j][i] for j in range(n) if j != i]) == 1)
 
     #Define a Restricao 3 para verificar um subciclo ja encontrado
     for i in range(1, n):
         for j in range(1, n):
             if j != i:
-                solver.Add((y[i] - n * x[i][j]) >= y[j] - (n - 1))
+                model.addConstr((y[i] - n * x[i][j]) >= y[j] - (n - 1))
 
-    if(flag == 2):
-        vector, result, m = greedy(matrix)
-        solver.SetHint(solver.variables(), vector)
+    #if(flag == 2):
+    #    vector, result, m = greedy(matrix)
+    #    solver.SetHint(solver.variables(), vector)
 
     #TODO
-    if(flag == 3):
-        vector, result, m = greedy(matrix)
-        path = path_tracer(m)
-        path = two_opt(path, matrix)
-        # result = cost(path, matrix) usado para comprar a distancia antes e depois do two_opt
-        solver.SetHint(solver.variables(), vector)
+    #if(flag == 3):
+    #    vector, result, m = greedy(matrix)
+    #    path = path_tracer(m)
+    #    path = two_opt(path, matrix)
+    #    result = cost(path, matrix) usado para comprar a distancia antes e depois do two_opt
+    #    solver.SetHint(solver.variables(), vector)
 
     #Define a funcao objetivo - indica que desejamos MINIMIZAR a funcao objetivo
-    #Também define a funcao objetivo
-    solver.Minimize(sum((matrix[i,j] * x[i][j]) for i in range(n) for j in range(n)))
+    model.setObjective(sum((matrix[i,j] * x[i][j]) for i in range(n) for j in range(n)), GRB.MINIMIZE)
 
-    solver.SetTimeLimit(600000)  #Limite de tempo de 10 minutos
-    solver.Solve()     #Chamada do solver para o modelo desenvolvido
+    model.optimize()     #Chamada do solver para o modelo desenvolvido
+
+    results = model.getVars() # pega as variaveis resolvidas
 
     #Obtem os valores das variaveis binarias x_ij que o solver encontrou
     ans_matrix = np.zeros((n,n), dtype=np.int64)
     for i in range(n):
         for j in range(n):
-            ans_matrix[i,j] = x[i][j].solution_value() 
+            ans_matrix[i,j] = results[(i*n)+j].x
 
-    obj = solver.Objective() # cria a classe objetivo para pegar o bestBound
-
-    return path_tracer(ans_matrix), solver.Objective().Value(), solver.nodes(), obj.BestBound(), solver.Iterations()
+    return path_tracer(ans_matrix)
