@@ -76,7 +76,7 @@ ngalaxys = len(coords)
 matrix = gen_matrix_dist(coords)
 
 try:
-    flag = int(input("Select an option:\n1-Without heuristics\n2-Greedy\n0-Exit\nOpção:"))
+    flag = int(input("Select an option:\n1-Without heuristics\n2-Greedy - heuristics\n0-Exit\nOpção:"))
 except:
     print("Error! Invalid Input!")
     exit()
@@ -88,7 +88,7 @@ try:
 except:
     print("Error! Invalid Input!")
     exit()
-if flag == 0:
+if flag2 == 0:
     exit()
 
 path = solve(matrix, flag, flag2)       #soluciona o problema dada a matriz de distancias do problema
