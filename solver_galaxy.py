@@ -61,7 +61,7 @@ def cost(route,matrix):
 
 # Heuristica de Melhoria 2-opt 
 # usada para melhorar o path encontrado no algoritmo guloso
-# Referência:    
+# Referência: http://pedrohfsd.com/2017/08/09/2opt-part1.html 
 def two_opt(initial_path, matrix):
     best_path = initial_path
     flag = True
