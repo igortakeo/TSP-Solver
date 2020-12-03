@@ -58,21 +58,32 @@ def cost(route,matrix):
         sum += matrix[route[i]-1,route[i-1]-1]
     return sum
 
-def two_opt(route, matrix):
-     best = route
-     improved = True
-     while improved:
-          improved = False
-          for i in range(1, len(route)-2):
-               for j in range(i+1, len(route)):
-                    if j-i == 1: continue # changes nothing, skip then
-                    new_route = route[:]
-                    new_route[i:j] = route[j-1:i-1:-1] # this is the 2woptSwap
-                    if cost(new_route,matrix) < cost(best,matrix):
-                         best = new_route
-                         improved = True
-          route = best
-     return best
+
+# Heuristica de Melhoria 2-opt 
+# usada para melhorar o path encontrado no algoritmo guloso
+# Referência:    
+def two_opt(initial_path, matrix):
+    best_path = initial_path
+    flag = True
+    size_path = len(initial_path)
+    while flag:
+        flag = False
+        i = 1
+        while i < size_path-2:
+            j = i+1
+            while j < size_path:
+                if j-1 != 1:
+                    new_path = initial_path[:]
+                    new_path[i:j] = initial_path[j-1:i-1:-1]
+                    if cost(new_path, matrix) < cost(best_path, matrix):
+                        best_path = new_path
+                        flag = True
+                j+=1
+            i+=1
+        initial_path = best_path
+
+    return best_path
+
 
 #dados os valores que o solver encontrou para as variaveis binarias x_ij
 #encontra o caminho percorrido (pontos visitados)
