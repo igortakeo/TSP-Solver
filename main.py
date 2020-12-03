@@ -28,9 +28,12 @@ def printPath(coords, path, name):
 #Funcao responsavel por obter os dados dado um arquivo .tsp de entrada, conforme os arquivos da especificacao
 def input_parser(input_name):
     coords = []
+    
+    path_input = "Test-Cases/"
+    path_input += input_name
 
     try:
-        f = open(input_name, 'r')
+        f = open(path_input, 'r')
     except OSError:
         print('Could not read file ' + input_name)      #Caso haja algum problema na abertura (Como arquivo inexistente)
         sys.exit()
