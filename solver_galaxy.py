@@ -1,12 +1,14 @@
-from ortools.linear_solver import pywraplp
+from gurobipy import gurobipy as gp
+from gurobipy import GRB
 import numpy as np
 
 INF = 0x3f3f3f3f
 
 def greedy(matrix_ori):
-
+    # copia a matriz original do problema
     matrix = np.copy(matrix_ori)
-
+   
+    # inicia as variaveis
     n = np.shape(matrix)[0]
     m = np.zeros((n,n),dtype=np.int64)
     matrix_aux = np.zeros((n+1,n),dtype=np.int64)
@@ -14,42 +16,41 @@ def greedy(matrix_ori):
     local = 0
     ind_y = n+1
 
+    # marca para n poder ir de um no para ele mesmo
     for i in range(n):
         matrix[i,i] = INF
 
+    # conecta as galaxias
     while galaxy_visited < n:
 
+        # calcula o y
         matrix_aux[n,local] = ind_y
         ind_y = ind_y - 1
 
+        # acha a mais próxima
         galaxy_visited = galaxy_visited + 1
         ind = np.argmin(matrix[local,:])    
-        
+
+        # marca que nao pode voltar para nenhuma tentar voltar para ela (ja visitada)
         for i in range(n):
             matrix[i,local] = INF
         
+        # marca por qual galaxia foi visitada
         matrix_aux[local,ind] = 1
         local = ind
 
-    result = 0
-    for i in range (n):
-        for j in range(n):
-            if matrix_aux[i,j] == 1:
-                result += matrix_ori[i,j]
-
-
+    # gera o vetor a ser usado no solver como resposta inicial
     vector = []
     for i in range(n+1):
         for j in range(n):
             vector.append(int(matrix_aux[i,j]))
 
- 
+     # copia a matrix aux
     for i in range(n):
         for j in range(n):
             m[i,j] = matrix_aux[i,j]
 
-    return vector, result, m
-
+    return vector, m
 
 def cost(route,matrix):
     sum = 0
@@ -57,21 +58,32 @@ def cost(route,matrix):
         sum += matrix[route[i]-1,route[i-1]-1]
     return sum
 
-def two_opt(route, matrix):
-     best = route
-     improved = True
-     while improved:
-          improved = False
-          for i in range(1, len(route)-2):
-               for j in range(i+1, len(route)):
-                    if j-i == 1: continue # changes nothing, skip then
-                    new_route = route[:]
-                    new_route[i:j] = route[j-1:i-1:-1] # this is the 2woptSwap
-                    if cost(new_route,matrix) < cost(best,matrix):
-                         best = new_route
-                         improved = True
-          route = best
-     return best
+
+# Heuristica de Melhoria 2-opt 
+# usada para melhorar o path encontrado no algoritmo guloso
+# Referência:    
+def two_opt(initial_path, matrix):
+    best_path = initial_path
+    flag = True
+    size_path = len(initial_path)
+    while flag:
+        flag = False
+        i = 1
+        while i < size_path-2:
+            j = i+1
+            while j < size_path:
+                if j-1 != 1:
+                    new_path = initial_path[:]
+                    new_path[i:j] = initial_path[j-1:i-1:-1]
+                    if cost(new_path, matrix) < cost(best_path, matrix):
+                        best_path = new_path
+                        flag = True
+                j+=1
+            i+=1
+        initial_path = best_path
+
+    return best_path
+
 
 #dados os valores que o solver encontrou para as variaveis binarias x_ij
 #encontra o caminho percorrido (pontos visitados)
@@ -96,58 +108,73 @@ def path_tracer(ans_matrix):
     return path
 
 
-def solve(matrix, flag):
-    solver = pywraplp.Solver.CreateSolver('SCIP') #Define o solver
+def solve(matrix, flag, flag2):
+
+    model = gp.Model("MPI_GALAXY") # Define o solver
+    model.setParam('TimeLimit', 60*10) # limita o tempo em 10 minutos
+
+    if(flag2 == 1):
+        model.setParam('MIPFocus', 1) # Seta o estregia para explorar os nós da arvore
+    
+    if(flag2 == 2):
+        model.setParam('MIPFocus', 3) # Seta o estregia para explorar os nós da arvore
 
     n = np.shape(matrix)[0]
     
     #Cria as variaveis
-    x = [[solver.IntVar(0, 1, 'x[%d,%d]' % (i,j)) for j in range(n)] for i in range(n)] #Define as variaveis binarias inteiras x_ij que assume valores 0 ou 1
+    x = [[model.addVar(0, 1, 0, vtype=GRB.INTEGER, name='x[%d,%d]' % (i,j)) for j in range(n)] for i in range(n)] #Define as variaveis binarias inteiras x_ij que assume valores 0 ou 1
     # x_ij assume 1 caso o caminho da galaxia i a galaxia j seja escolhido
     # x_ij assume 0 caso contrario
 
-    infinity = solver.infinity()
-
-    y = [solver.IntVar(0, infinity, 'y[%d]' % (i)) for i in range(n)] #define a variavel auxiliar y
+    y = [model.addVar(0, GRB.INFINITY, 0, vtype=GRB.INTEGER, name='y[%d]' % (i)) for i in range(n)] #define a variavel auxiliar y
     
     #Define as restricoes 1 e 2
     for i in range(n): 
         #Restricao 1: sum em j de {x_ij} = 1 para todo i 
-        solver.Add(sum([x[i][j] for j in range(n) if j != i]) == 1)
+        model.addConstr(sum([x[i][j] for j in range(n) if j != i]) == 1)
         #Restricao 2: sum em i de {x_ij} = 1 para todo j
-        solver.Add(sum([x[j][i] for j in range(n) if j != i]) == 1)
+        model.addConstr(sum([x[j][i] for j in range(n) if j != i]) == 1)
 
     #Define a Restricao 3 para verificar um subciclo ja encontrado
     for i in range(1, n):
         for j in range(1, n):
             if j != i:
-                solver.Add((y[i] - n * x[i][j]) >= y[j] - (n - 1))
-
-    if(flag == 2):
-        vector, result, m = greedy(matrix)
-        solver.SetHint(solver.variables(), vector)
-
-    #TODO
-    if(flag == 3):
-        vector, result, m = greedy(matrix)
-        path = path_tracer(m)
-        path = two_opt(path, matrix)
-        # result = cost(path, matrix) usado para comprar a distancia antes e depois do two_opt
-        solver.SetHint(solver.variables(), vector)
+                model.addConstr((y[i] - n * x[i][j]) >= y[j] - (n - 1))
 
     #Define a funcao objetivo - indica que desejamos MINIMIZAR a funcao objetivo
-    #Também define a funcao objetivo
-    solver.Minimize(sum((matrix[i,j] * x[i][j]) for i in range(n) for j in range(n)))
+    model.setObjective(sum((matrix[i,j] * x[i][j]) for i in range(n) for j in range(n)), GRB.MINIMIZE)
 
-    solver.SetTimeLimit(600000)  #Limite de tempo de 10 minutos
-    solver.Solve()     #Chamada do solver para o modelo desenvolvido
+    model.update()
+
+    # heuristica gulosa
+    if(flag == 2):
+        vector, m = greedy(matrix)
+        vars = model.getVars()
+        #coloca os x e os y
+        for i in range(n+1):
+            for j in range(n):
+                vars[(i*n)+j].start = vector[(i*n)+j]
+        #coloca os y
+        #for j in range(n):
+        #    vars[(n*n)+j].start = GRB.UNDEFINED
+
+    #TODO
+    #if(flag == 3):
+    #    vector, result, m = greedy(matrix)
+    #    path = path_tracer(m)
+    #    path = two_opt(path, matrix)
+    #    result = cost(path, matrix) usado para comprar a distancia antes e depois do two_opt
+    #    solver.SetHint(solver.variables(), vector)
+
+
+    model.optimize()     #Chamada do solver para o modelo desenvolvido
+
+    results = model.getVars() # pega as variaveis resolvidas
 
     #Obtem os valores das variaveis binarias x_ij que o solver encontrou
     ans_matrix = np.zeros((n,n), dtype=np.int64)
     for i in range(n):
         for j in range(n):
-            ans_matrix[i,j] = x[i][j].solution_value() 
+            ans_matrix[i,j] = results[(i*n)+j].x
 
-    obj = solver.Objective() # cria a classe objetivo para pegar o bestBound
-
-    return path_tracer(ans_matrix), solver.Objective().Value(), solver.nodes(), obj.BestBound(), solver.Iterations()
+    return path_tracer(ans_matrix)
