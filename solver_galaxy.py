@@ -82,7 +82,21 @@ def two_opt(initial_path, matrix):
             i+=1
         initial_path = best_path
 
-    return best_path
+    return matrix_from_path(best_path)
+
+#
+#
+def matrix_from_path(path):
+    n = len(path) - 1
+    matrix = np.zeros((n+1,n), dtype=np.int64)
+    ind_y = n
+
+    for i in range(1, n + 1):
+        matrix[path[i-1] - 1, path[i] - 1] = 1
+        matrix[n, path[i] - 1] = ind_y
+        ind_y = ind_y - 1
+
+    return matrix
 
 
 #dados os valores que o solver encontrou para as variaveis binarias x_ij
@@ -106,7 +120,6 @@ def path_tracer(ans_matrix):
 
 
     return path
-
 
 def solve(matrix, flag, flag2):
 
@@ -158,13 +171,19 @@ def solve(matrix, flag, flag2):
         #for j in range(n):
         #    vars[(n*n)+j].start = GRB.UNDEFINED
 
-    #TODO
-    #if(flag == 3):
-    #    vector, result, m = greedy(matrix)
-    #    path = path_tracer(m)
-    #    path = two_opt(path, matrix)
-    #    result = cost(path, matrix) usado para comprar a distancia antes e depois do two_opt
-    #    solver.SetHint(solver.variables(), vector)
+    # heuristica gulosa + heuristica de melhoria 2-OPT
+    if(flag == 3):
+        _ , m = greedy(matrix)
+        matrix_adj = two_opt(path_tracer(m), matrix)
+        #print(matrix_adj)
+        #exit()
+        vars = model.getVars()
+        #coloca os x e os y
+        for i in range(n+1):
+            for j in range(n):
+                vars[(i*n)+j].start = matrix_adj[i, j]
+        
+
 
 
     model.optimize()     #Chamada do solver para o modelo desenvolvido
