@@ -1,6 +1,7 @@
 from gurobipy import gurobipy as gp
 from gurobipy import GRB
 import numpy as np
+import networkx as nx
 
 INF = 0x3f3f3f3f
 
@@ -84,8 +85,8 @@ def two_opt(initial_path, matrix):
 
     return matrix_from_path(best_path)
 
-#
-#
+# Funcao que retorna uma matriz de adjacencias
+# a partir de um caminho (lista de visitados) encontrado
 def matrix_from_path(path):
     n = len(path) - 1
     matrix = np.zeros((n+1,n), dtype=np.int64)
@@ -98,6 +99,40 @@ def matrix_from_path(path):
 
     return matrix
 
+#########################################################
+
+#Heuristica construtiva de christofides
+def christofides(matrix):
+    G = nx.from_numpy_array(matrix) #constroi um grafo G completo a partir da matriz de distancias
+    G_MST = nx.minimum_spanning_tree(G) #encontra a arvore geradora minima do grafo
+
+    #acha todos os vertices de grau impar na arvore geradora minima
+    odd_vertices = [] 
+    even_vertices = [] 
+    for vertice in G_MST.nodes():
+        degree = len(G_MST.adj[vertice])
+        if degree % 2 == 1:
+            odd_vertices.append(vertice)
+        else:
+            even_vertices.append(vertice)
+    
+    #monta a matriz de adjacencias contendo apenas os vertices com grau impar na arvore geradora minima
+    matrix_sub = np.delete(matrix, even_vertices, axis = 1)         #remove todos os vertices de grau par
+    matrix_sub = np.delete(matrix_sub, even_vertices, axis= 0)      
+
+    #como a funcao da biblioteca networkx trabalha com matching perfeito de maximo custo
+    #constroi o grafo de peso de arestas complementar para achar o matching perfeito de minimo custo
+    max_weight_edge = np.max(matrix_sub)                #acha o maior peso de aresta
+    matrix_sub = (matrix_sub*(-1)) + max_weight_edge    #acha a matriz de pesos complementar
+    matrix_sub = matrix_sub + 1
+
+    G_matching = nx.from_numpy_array(matrix_sub)    #constroi o grafo com a matriz de adjacencias complementar
+    print(nx.max_weight_matching(G_matching, maxcardinality = True))
+
+
+    
+
+   
 
 #dados os valores que o solver encontrou para as variaveis binarias x_ij
 #encontra o caminho percorrido (pontos visitados)
@@ -182,8 +217,11 @@ def solve(matrix, flag, flag2):
         for i in range(n+1):
             for j in range(n):
                 vars[(i*n)+j].start = matrix_adj[i, j]
-        
-
+    
+    # heuristica do algoritmo de christofides
+    if(flag == 4):
+        christofides(matrix)
+        exit()
 
 
     model.optimize()     #Chamada do solver para o modelo desenvolvido
