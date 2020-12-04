@@ -63,11 +63,11 @@ def input_parser(input_name):
 def gen_matrix_dist(coords):
     n = len(coords)
     matrix = np.zeros((n,n))
-    
+
     for i in range(n):          #Calcula a distancia euclidiana da galaxia i a galaxia j
         for j in range(i, n):
             matrix[i,j] = matrix[j,i] =  math.sqrt((coords[i][0] - coords[j][0])**2 + (coords[i][1] - coords[j][1])**2) 
-    
+
     return matrix
 
 

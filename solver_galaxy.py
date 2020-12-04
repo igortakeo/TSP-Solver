@@ -103,9 +103,15 @@ def matrix_from_path(path):
 
 #Heuristica construtiva de christofides
 def christofides(matrix):
+    map_odd_vertices = dict()
+    set_max_matching = set()
+    n = np.shape(matrix)[0]
+    matrix_ret = np.zeros((n,n),dtype=np.int64)
+    
     G = nx.from_numpy_array(matrix) #constroi um grafo G completo a partir da matriz de distancias
+    G = nx.eulerize(G) # ***NECESSARIO***
     G_MST = nx.minimum_spanning_tree(G) #encontra a arvore geradora minima do grafo
-
+    
     #acha todos os vertices de grau impar na arvore geradora minima
     odd_vertices = [] 
     even_vertices = [] 
@@ -113,9 +119,10 @@ def christofides(matrix):
         degree = len(G_MST.adj[vertice])
         if degree % 2 == 1:
             odd_vertices.append(vertice)
+            map_odd_vertices[len(odd_vertices)-1] = vertice
         else:
             even_vertices.append(vertice)
-    
+
     #monta a matriz de adjacencias contendo apenas os vertices com grau impar na arvore geradora minima
     matrix_sub = np.delete(matrix, even_vertices, axis = 1)         #remove todos os vertices de grau par
     matrix_sub = np.delete(matrix_sub, even_vertices, axis= 0)      
@@ -127,13 +134,32 @@ def christofides(matrix):
     matrix_sub = matrix_sub + 1
 
     G_matching = nx.from_numpy_array(matrix_sub)    #constroi o grafo com a matriz de adjacencias complementar
-    print(nx.max_weight_matching(G_matching, maxcardinality = True))
+    set_max_matching = nx.max_weight_matching(G_matching, maxcardinality = True)
+    
+    
+    for x, y in set_max_matching:
+        G_MST.add_edge(map_odd_vertices[x], map_odd_vertices[y], weight=matrix[map_odd_vertices[x], map_odd_vertices[y]])
+
+
+    eulerian_route = list(nx.eulerian_circuit(G_MST, source=0))
+
+    # Se todos os nos tiverem grau 2, terminou o algoritmo
+    flag_break = True
+    for vertice in G_MST.nodes():
+        degree = len(G_MST.adj[vertice])
+        if degree != 2:
+            flag_break = False 
+            break
+    
+    if flag_break:
+        for x, y in eulerian_route:
+            matrix_ret[x,y] = 1
+        print(matrix_ret)
+        return matrix_ret
+
 
 
     
-
-   
-
 #dados os valores que o solver encontrou para as variaveis binarias x_ij
 #encontra o caminho percorrido (pontos visitados)
 def path_tracer(ans_matrix):
