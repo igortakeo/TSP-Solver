@@ -2,6 +2,7 @@ from gurobipy import gurobipy as gp
 from gurobipy import GRB
 import numpy as np
 import networkx as nx
+import heapq as pq 
 
 INF = 0x3f3f3f3f
 
@@ -109,7 +110,7 @@ def christofides(matrix):
     matrix_ret = np.zeros((n,n),dtype=np.int64)
     
     G = nx.from_numpy_array(matrix) #constroi um grafo G completo a partir da matriz de distancias
-    G = nx.eulerize(G) # ***NECESSARIO***
+    #G = nx.eulerize(G) # ***NECESSARIO***
     G_MST = nx.minimum_spanning_tree(G) #encontra a arvore geradora minima do grafo
     
     #acha todos os vertices de grau impar na arvore geradora minima
@@ -136,26 +137,78 @@ def christofides(matrix):
     G_matching = nx.from_numpy_array(matrix_sub)    #constroi o grafo com a matriz de adjacencias complementar
     set_max_matching = nx.max_weight_matching(G_matching, maxcardinality = True)
     
-    
     for x, y in set_max_matching:
-        G_MST.add_edge(map_odd_vertices[x], map_odd_vertices[y], weight=matrix[map_odd_vertices[x], map_odd_vertices[y]])
+        u = map_odd_vertices[x]
+        v = map_odd_vertices[y] 
+        G_MST.add_edge(u, v, weight=matrix[u, v])
 
+    G_MST = nx.eulerize(G_MST)
 
-    eulerian_route = list(nx.eulerian_circuit(G_MST, source=0))
-
-    # Se todos os nos tiverem grau 2, terminou o algoritmo
     flag_break = True
-    for vertice in G_MST.nodes():
+
+    #Se todos os nos tiverem grau 2, terminou o algoritmo
+    for vertice in G_MST.nodes(): 
         degree = len(G_MST.adj[vertice])
         if degree != 2:
             flag_break = False 
             break
     
-    if flag_break:
+    #Encontrando o caminho euleriano e terminando o algoritmo se flag_break = True 
+    if flag_break: 
+        eulerian_route = list(nx.eulerian_circuit(G_MST, source=0))
         for x, y in eulerian_route:
             matrix_ret[x,y] = 1
-        print(matrix_ret)
         return matrix_ret
+
+    heap = []
+    degree_nodes = [0]*n
+
+    #Loop para pegar o grau de cada no de acordo com as arestas do grafo
+    for edge in G_MST.edges(): 
+        degree_nodes[edge[0]]+=1
+        degree_nodes[edge[1]]+=1
+
+    #Inserindo os nos na fila de prioridades
+    for i in range(n): 
+        pq.heappush(heap, (-degree_nodes[i], i))
+
+
+    #Realizando o shortcut
+    while heap[0][0]*-1 > 2:  
+        node = pq.heappop(heap)
+        w = node[1] #No com o maior grau
+        degree_w = node[0]*-1 
+        map_adj = G_MST.adj[w]
+        list_adj = list() #Lista de adjacentes do no w
+        for i in map_adj:
+            list_adj.append(i)
+        flag = False
+        for i in range(len(list_adj)):
+            for j in range(i+1, len(list_adj)):
+                x = list_adj[i]
+                y = list_adj[j]
+                if matrix[x,y] <= matrix[x,w] + matrix[w,y]: #Desigualdade triangular
+                    Graph_copy = G_MST.copy()
+                    Graph_copy.remove_edge(x,w) 
+                    Graph_copy.remove_edge(w,y)
+                    Graph_copy.add_edge(x,y, weight=matrix[x,y])
+                    if nx.is_connected(Graph_copy): #Verificando se o grafo permaneceu conexo 
+                        G_MST = Graph_copy.copy()
+                        flag = True
+                        break
+            if flag: 
+                break
+        degree_w -= 2 
+        pq.heappush(heap, (-degree_w, w))
+    
+    #Encontrando o caminho euleriano    
+    eulerian_route = list(nx.eulerian_circuit(G_MST, source=0))
+
+    #Montando a matriz de adjacencia
+    for x, y in eulerian_route:
+        matrix_ret[x,y] = 1
+    
+    return matrix_ret    
 
 
 
@@ -183,7 +236,6 @@ def path_tracer(ans_matrix):
     return path
 
 def solve(matrix, flag, flag2):
-
     model = gp.Model("MPI_GALAXY") # Define o solver
     model.setParam('TimeLimit', 60*10) # limita o tempo em 10 minutos
 
@@ -246,7 +298,7 @@ def solve(matrix, flag, flag2):
     
     # heuristica do algoritmo de christofides
     if(flag == 4):
-        christofides(matrix)
+        matrix_adj = christofides(matrix)
         exit()
 
 
