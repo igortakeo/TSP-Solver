@@ -3,8 +3,10 @@ from gurobipy import GRB
 import numpy as np
 import networkx as nx
 import heapq as pq 
+from time import time
 
 INF = 0x3f3f3f3f
+time_limit_2opt = 5*60 # 5 minutos
 
 def greedy(matrix_ori):
     # copia a matriz original do problema
@@ -47,10 +49,8 @@ def greedy(matrix_ori):
         for j in range(n):
             vector.append(int(matrix_aux[i,j]))
 
-     # copia a matrix aux
-    for i in range(n):
-        for j in range(n):
-            m[i,j] = matrix_aux[i,j]
+    # copia a matrix aux
+    m = np.copy(matrix_aux)
 
     return vector, m
 
@@ -68,6 +68,8 @@ def two_opt(initial_path, matrix):
     best_path = initial_path
     flag = True
     size_path = len(initial_path)
+    time_ini = time()
+    
     while flag:
         flag = False
         i = 1
@@ -81,6 +83,13 @@ def two_opt(initial_path, matrix):
                         best_path = new_path
                         flag = True
                 j+=1
+                
+                time_now = time()
+                seg_running = (time_now - time_ini)
+                if seg_running > time_limit_2opt:
+                    print("Time out Two-Opt")
+                    return matrix_from_path(best_path)
+
             i+=1
         initial_path = best_path
 
@@ -274,7 +283,9 @@ def solve(matrix, flag, flag2):
 
     # heuristica gulosa
     if(flag == 2):
+        print("Running Greedy...")
         vector, m = greedy(matrix)
+        print("Greedy complete")
         vars = model.getVars()
         #coloca os x e os y
         for i in range(n+1):
@@ -286,10 +297,12 @@ def solve(matrix, flag, flag2):
 
     # heuristica gulosa + heuristica de melhoria 2-OPT
     if(flag == 3):
+        print("Running Greedy...")
         _ , m = greedy(matrix)
+        print("Greedy complete")
+        print("Running Two-Opt...")
         matrix_adj = two_opt(path_tracer(m), matrix)
-        #print(matrix_adj)
-        #exit()
+        print("Two-Opt complete")
         vars = model.getVars()
         #coloca os x e os y
         for i in range(n+1):
@@ -298,7 +311,9 @@ def solve(matrix, flag, flag2):
     
     # heuristica do algoritmo de christofides
     if(flag == 4):
+        print("Running Christofides...")
         matrix_adj = christofides(matrix)
+        print("Christofides complete")
         exit()
 
 
