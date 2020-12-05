@@ -237,13 +237,13 @@ def path_tracer(ans_matrix):
 
 def solve(matrix, flag, flag2):
     model = gp.Model("MPI_GALAXY") # Define o solver
-    model.setParam('TimeLimit', 60*10) # limita o tempo em 10 minutos
+    model.setParam('TimeLimit', 60*30) # limita o tempo em 10 minutos
 
-    if(flag2 == 1):
+    if(flag2 == 2):
         model.setParam('MIPFocus', 1) # Seta o estregia para explorar os nós da arvore
     
-    if(flag2 == 2):
-        model.setParam('MIPFocus', 3) # Seta o estregia para explorar os nós da arvore
+    if(flag2 == 3):
+        model.setParam('MIPFocus', 2) # Seta o estregia para explorar os nós da arvore
 
     n = np.shape(matrix)[0]
     
@@ -310,6 +310,7 @@ def solve(matrix, flag, flag2):
     ans_matrix = np.zeros((n,n), dtype=np.int64)
     for i in range(n):
         for j in range(n):
-            ans_matrix[i,j] = results[(i*n)+j].x
+            if i != j:
+                ans_matrix[i,j] = results[(i*n)+j].x
 
     return path_tracer(ans_matrix)
