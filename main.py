@@ -87,7 +87,7 @@ if flag == 0:
     exit()
 
 try:
-    flag2 = int(input("Select an option:\n1-Without focus\n2-Focus on decrease the primal\n3-Focus more attention on proving optimality\n0-Exit\nOpção:"))
+    flag2 = int(input("Select an option:\n1-Without focus\n2-Focus on feasible solutions\n3-Focus on proving optimality\n0-Exit\nOpção:"))
 except:
     print("Error! Invalid Input!")
     exit()
