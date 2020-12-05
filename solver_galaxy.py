@@ -111,15 +111,31 @@ def matrix_from_path(path):
 
 #########################################################
 
+def add_y_from_matrix(matrix, n):
+
+    y_ind = n+1
+    local = 0
+
+    for i in range(n):
+        matrix[n,local] = y_ind
+        y_ind = y_ind - 1 
+
+        next = 0
+        while matrix[local, next] != 1:
+            next = next + 1
+
+        local = next
+    
+    return matrix
+
 #Heuristica construtiva de christofides
 def christofides(matrix):
     map_odd_vertices = dict()
     set_max_matching = set()
     n = np.shape(matrix)[0]
-    matrix_ret = np.zeros((n,n),dtype=np.int64)
+    matrix_ret = np.zeros((n+1,n),dtype=np.int64)
     
     G = nx.from_numpy_array(matrix) #constroi um grafo G completo a partir da matriz de distancias
-    #G = nx.eulerize(G) # ***NECESSARIO***
     G_MST = nx.minimum_spanning_tree(G) #encontra a arvore geradora minima do grafo
     
     #acha todos os vertices de grau impar na arvore geradora minima
@@ -167,7 +183,7 @@ def christofides(matrix):
         eulerian_route = list(nx.eulerian_circuit(G_MST, source=0))
         for x, y in eulerian_route:
             matrix_ret[x,y] = 1
-        return matrix_ret
+        return add_y_from_matrix(matrix_ret,n)
 
     heap = []
     degree_nodes = [0]*n
@@ -217,7 +233,7 @@ def christofides(matrix):
     for x, y in eulerian_route:
         matrix_ret[x,y] = 1
     
-    return matrix_ret    
+    return add_y_from_matrix(matrix_ret, n)
 
 
 
@@ -314,7 +330,11 @@ def solve(matrix, flag, flag2):
         print("Running Christofides...")
         matrix_adj = christofides(matrix)
         print("Christofides complete")
-        exit()
+        vars = model.getVars()
+        #coloca os x e os y
+        for i in range(n+1):
+            for j in range(n):
+                vars[(i*n)+j].start = matrix_adj[i, j]
 
 
     model.optimize()     #Chamada do solver para o modelo desenvolvido
