@@ -111,15 +111,19 @@ def matrix_from_path(path):
 
 #########################################################
 
+# Dado a matriz de adjacencia com o caminho, calcula o y e add
+# o resultado a matriz e retorna a matriz
 def add_y_from_matrix(matrix, n):
 
     y_ind = n+1
     local = 0
 
     for i in range(n):
+        # calcula o y
         matrix[n,local] = y_ind
         y_ind = y_ind - 1 
 
+        # procura o proxima nó
         next = 0
         while matrix[local, next] != 1:
             next = next + 1
