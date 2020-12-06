@@ -1,4 +1,4 @@
-# Project-Prog-Mat
+# Projeto de Progamação Matemática
 ## Como execultar o código
 ### Bibliotecas
 Para executar o código é preciso ter algumas bibliotecas além do Python 3. Segue a lista de bibliotecas necessárias para execultar o código.  
