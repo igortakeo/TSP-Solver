@@ -2,11 +2,11 @@
 ## Como execultar o código
 ### Bibliotecas
 Para executar o código é preciso ter algumas bibliotecas além do Python 3. Segue a lista de bibliotecas necessárias para execultar o código.  
-matplotlib
-numpy
-gurobi
-heapq
-networkx
+- matplotlib
+- numpy
+- gurobi
+- heapq
+- networkx
 Para instalar as bibliotecas pode execultar o comando:
 ```
 $ pip3 install <biblioteca>
@@ -23,8 +23,8 @@ Insert test file name: teste-1.tsp
 ```
 Este arquivo deve estar na pasta Test-Cases dentro do diretório do código.
 ## Alunos
-Rodrigo Cesar Arboleda - 10416722
-Marcelo Isaias de Moraes Junior - 10550218
-Igor Takeo Ambo de Melo - 10830054
-Mateus Ferreira Gomes - 10734773
-Guilherme Targon Marques Barcellos - 10724181
+- Rodrigo Cesar Arboleda - 10416722
+- Marcelo Isaias de Moraes Junior - 10550218
+- Igor Takeo Ambo de Melo - 10830054
+- Mateus Ferreira Gomes - 10734773
+- Guilherme Targon Marques Barcellos - 10724181
