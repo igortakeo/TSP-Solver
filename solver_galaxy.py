@@ -143,7 +143,7 @@ def christofides(matrix):
     
     G = nx.from_numpy_array(matrix) #Constroi um grafo G completo a partir da matriz de distancias
     G_MST = nx.minimum_spanning_tree(G) #Encontra a arvore geradora minima do grafo
-    
+        
     #Acha todos os vertices de grau impar na arvore geradora minima
     odd_vertices = [] 
     even_vertices = [] 
@@ -174,8 +174,9 @@ def christofides(matrix):
         v = map_odd_vertices[y] 
         G_MST.add_edge(u, v, weight=matrix[u, v])
 
+    
     G_MST = nx.eulerize(G_MST)
-
+    
     flag_break = True
 
     #Se todos os nos tiverem grau 2, terminou o algoritmo
