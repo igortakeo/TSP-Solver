@@ -7,6 +7,7 @@ Para executar o código é preciso ter algumas bibliotecas além do Python 3. Se
 - gurobi
 - heapq
 - networkx  
+  
 Para instalar as bibliotecas pode execultar o comando:
 ```
 $ pip3 install <biblioteca>
