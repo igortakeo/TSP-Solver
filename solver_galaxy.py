@@ -54,6 +54,8 @@ def greedy(matrix_ori):
 
     return vector, m
 
+
+#A funcao retorna o custo de um caminho de acordo com a matriz de distancias
 def cost(route,matrix):
     sum = 0
     for i in range(1, len(route)):
@@ -61,13 +63,13 @@ def cost(route,matrix):
     return sum
 
 
-# Heuristica de Melhoria 2-opt 
-# usada para melhorar o path encontrado no algoritmo guloso
+# Heuristica de Melhoria
+# 2-opt e usada para melhorar o path encontrado no algoritmo guloso
 # Referência: http://pedrohfsd.com/2017/08/09/2opt-part1.html 
 def two_opt(initial_path, matrix):
-    best_path = initial_path
-    flag = True
-    size_path = len(initial_path)
+    best_path = initial_path #Definindo o caminho inicial como o melhor 
+    flag = True  
+    size_path = len(initial_path) #Pegando o tamanho do caminho 
     time_ini = time()
     
     while flag:
@@ -77,23 +79,23 @@ def two_opt(initial_path, matrix):
             j = i+1
             while j < size_path:
                 if j-1 != 1:
-                    new_path = initial_path[:]
-                    new_path[i:j] = initial_path[j-1:i-1:-1]
-                    if cost(new_path, matrix) < cost(best_path, matrix):
-                        best_path = new_path
+                    new_path = initial_path[:] #Copia do melhor caminho ate o momento
+                    new_path[i:j] = initial_path[j-1:i-1:-1] #Realizando o swap do two-opt
+                    if cost(new_path, matrix) < cost(best_path, matrix): #Verificando se o custo do novo caminho e menor que o custo do melhor caminho econtrado
+                        best_path = new_path #Agora o novo caminho e o melhor caminho
                         flag = True
                 j+=1
                 
                 time_now = time()
                 seg_running = (time_now - time_ini)
-                if seg_running > time_limit_2opt:
+                if seg_running > time_limit_2opt: #Verificando se a execucao do two-opt ultrapassou o temo de 5 minutos
                     print("Time out Two-Opt")
                     return matrix_from_path(best_path)
 
             i+=1
-        initial_path = best_path
+        initial_path = best_path 
 
-    return matrix_from_path(best_path)
+    return matrix_from_path(best_path) #Retornando a matriz de adjacencia a partir do melhor camiho econtrado
 
 # Funcao que retorna uma matriz de adjacencias
 # a partir de um caminho (lista de visitados) encontrado
@@ -139,10 +141,10 @@ def christofides(matrix):
     n = np.shape(matrix)[0]
     matrix_ret = np.zeros((n+1,n),dtype=np.int64)
     
-    G = nx.from_numpy_array(matrix) #constroi um grafo G completo a partir da matriz de distancias
-    G_MST = nx.minimum_spanning_tree(G) #encontra a arvore geradora minima do grafo
+    G = nx.from_numpy_array(matrix) #Constroi um grafo G completo a partir da matriz de distancias
+    G_MST = nx.minimum_spanning_tree(G) #Encontra a arvore geradora minima do grafo
     
-    #acha todos os vertices de grau impar na arvore geradora minima
+    #Acha todos os vertices de grau impar na arvore geradora minima
     odd_vertices = [] 
     even_vertices = [] 
     for vertice in G_MST.nodes():
@@ -153,19 +155,20 @@ def christofides(matrix):
         else:
             even_vertices.append(vertice)
 
-    #monta a matriz de adjacencias contendo apenas os vertices com grau impar na arvore geradora minima
-    matrix_sub = np.delete(matrix, even_vertices, axis = 1)         #remove todos os vertices de grau par
+    #Monta a matriz de adjacencias contendo apenas os vertices com grau impar na arvore geradora minima
+    matrix_sub = np.delete(matrix, even_vertices, axis = 1)         #Remove todos os vertices de grau par
     matrix_sub = np.delete(matrix_sub, even_vertices, axis= 0)      
 
-    #como a funcao da biblioteca networkx trabalha com matching perfeito de maximo custo
+    #Como a funcao da biblioteca networkx trabalha com matching perfeito de maximo custo
     #constroi o grafo de peso de arestas complementar para achar o matching perfeito de minimo custo
-    max_weight_edge = np.max(matrix_sub)                #acha o maior peso de aresta
-    matrix_sub = (matrix_sub*(-1)) + max_weight_edge    #acha a matriz de pesos complementar
+    max_weight_edge = np.max(matrix_sub)                #Acha o maior peso de aresta
+    matrix_sub = (matrix_sub*(-1)) + max_weight_edge    #Acha a matriz de pesos complementar
     matrix_sub = matrix_sub + 1
 
-    G_matching = nx.from_numpy_array(matrix_sub)    #constroi o grafo com a matriz de adjacencias complementar
+    G_matching = nx.from_numpy_array(matrix_sub)    #Constroi o grafo com a matriz de adjacencias complementar
     set_max_matching = nx.max_weight_matching(G_matching, maxcardinality = True)
     
+    #Unindo o grafo MST com o grafo resultante do perfect matching
     for x, y in set_max_matching:
         u = map_odd_vertices[x]
         v = map_odd_vertices[y] 
